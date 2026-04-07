@@ -169,7 +169,7 @@ body {
   overflow: hidden;
   background: #f5f2eb;
   background-image: repeating-linear-gradient(
-    transparent, transparent 27px, rgba(0,0,0,0.06) 28px
+    transparent, transparent 41px, rgba(0,0,0,0.15) 42px
   );
 }
 
@@ -394,7 +394,7 @@ function applyStyle() {
   if (currentTool === 'pencil') {
     ctx.globalCompositeOperation = 'source-over';
     ctx.strokeStyle = '#1a1a1a';
-    ctx.lineWidth   = 3;
+    ctx.lineWidth   = 1.5;
   } else {
     ctx.globalCompositeOperation = 'destination-out';
     ctx.strokeStyle = 'rgba(0,0,0,1)';
