@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>素因数分解チャレンジ</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid #c8bfaa;
+}
+
+/* ── Panel ────────────────────────────────────────────── */
+.panel {
+  background: #e8e2d4;
+  border-bottom: 2px solid #b8b0a0;
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.panel-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #888070;
+  margin-bottom: 5px;
+}
+
+.digits { display: flex; gap: 4px; }
+
+.digit-box {
+  width: 38px; height: 50px;
+  border-radius: 3px;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1.5px solid #b8b0a0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  transition: color 0.1s;
+}
+
+.divider {
+  width: 1px; height: 40px;
+  background: #b8b0a0;
+  flex-shrink: 0;
+}
+
+.timer-display {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 400;
+  color: #1a1a1a;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+  min-width: 108px;
+}
+
+.timer-display .ms {
+  font-size: 15px;
+}
+
+.controls { display: flex; gap: 6px; margin-left: auto; }
+
+.btn {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1a;
+  color: #fff;
+  transition: opacity 0.15s;
+}
+
+.btn svg {
+  width: 16px; height: 16px;
+  fill: currentColor;
+  display: block;
+}
+
+.btn:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+/* ── Canvas section ────────────────────────────────────── */
+.canvas-section {
+  flex: 1;
+  background: #f5f2eb;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 12px;
+  gap: 8px;
+  min-height: 0;
+}
+
+/* ── Toolbar ────────────────────────────────────────────── */
+.toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.tool-btn {
+  width: 34px; height: 34px;
+  border-radius: 5px;
+  border: 1.5px solid #c8bfaa;
+  background: #ede8de;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.tool-btn svg {
+  width: 17px; height: 17px;
+  stroke: #6a6050;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 0.15s;
+}
+
+.tool-btn.active {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+.tool-btn.active svg { stroke: #fff; }
+
+.tool-btn.trash { margin-left: auto; }
+.tool-btn.trash:hover { border-color: #c05050; }
+.tool-btn.trash:hover svg { stroke: #c05050; }
+
+/* ── Canvas ─────────────────────────────────────────────── */
+#canvas-wrapper {
+  flex: 1;
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid #c8bfaa;
+  overflow: hidden;
+  background: #f5f2eb;
+  background-image: repeating-linear-gradient(
+    transparent, transparent 27px, rgba(0,0,0,0.06) 28px
+  );
+}
+
+#canvas {
+  display: block;
+  position: absolute;
+  top: 0; left: 0;
+  touch-action: none;
+  cursor: crosshair;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="panel">
+    <div>
+      <div class="digits">
+        <div class="digit-box" id="d0"></div>
+        <div class="digit-box" id="d1"></div>
+        <div class="digit-box" id="d2"></div>
+        <div class="digit-box" id="d3"></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div>
+      <div class="timer-display" id="timer"></div>
+    </div>
+    <div class="controls">
+      <button class="btn" id="btn-left" title="スタート"></button>
+      <button class="btn" id="btn-right" title="ストップ" disabled></button>
+    </div>
+  </div>
+
+  <div class="canvas-section">
+    <div class="toolbar">
+      <button class="tool-btn active" id="tool-pencil" title="鉛筆">
+        <svg viewBox="0 0 24 24">
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+        </svg>
+      </button>
+      <button class="tool-btn" id="tool-eraser" title="消しゴム">
+        <svg viewBox="0 0 24 24">
+          <path d="M20 20H7L3 16l10-10 7 7-2.5 2.5"/>
+          <path d="M6.5 17.5l4-4"/>
+        </svg>
+      </button>
+    </div>
+    <div id="canvas-wrapper">
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SVG icons ────────────────────────────────────────────────────────────────
+const ICON_PLAY  = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="6,3 20,12 6,21"/></svg>`;
+const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="5" y="3" width="4" height="18" rx="1"/><rect x="15" y="3" width="4" height="18" rx="1"/></svg>`;
+const ICON_STOP  = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`;
+
+// ── Layout ───────────────────────────────────────────────────────────────────
+const appH = Math.floor(window.innerHeight * 0.95 / 16) * 16;
+const appW = appH / 16 * 9;
+const app  = document.getElementById('app');
+app.style.width  = appW + 'px';
+app.style.height = appH + 'px';
+
+// ── Canvas ───────────────────────────────────────────────────────────────────
+const wrapper = document.getElementById('canvas-wrapper');
+const canvas  = document.getElementById('canvas');
+const ctx     = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const r = wrapper.getBoundingClientRect();
+  canvas.width  = Math.floor(r.width);
+  canvas.height = Math.floor(r.height);
+  canvas.style.width  = canvas.width  + 'px';
+  canvas.style.height = canvas.height + 'px';
+}
+
+// Wait for layout to settle before measuring canvas
+requestAnimationFrame(() => { requestAnimationFrame(resizeCanvas); });
+
+// ── State ────────────────────────────────────────────────────────────────────
+// 'waiting' | 'running' | 'paused'
+let state      = 'waiting';
+let elapsed    = 0;          // accumulated ms
+let startStamp = null;       // performance.now() at last resume
+let rafId      = null;
+
+// ── Timer display ────────────────────────────────────────────────────────────
+const timerEl = document.getElementById('timer');
+
+function formatTime(ms) {
+  const total = Math.floor(ms);
+  const m   = Math.floor(total / 60000);
+  const s   = Math.floor((total % 60000) / 1000);
+  const mil = total % 1000;
+  return `${m}'${String(s).padStart(2,'0')}"<span class="ms">${String(mil).padStart(3,'0')}</span>`;
+}
+
+function renderTimer() {
+  const ms = state === 'running'
+    ? elapsed + (performance.now() - startStamp)
+    : elapsed;
+  timerEl.innerHTML = formatTime(ms);
+}
+
+function tick() {
+  renderTimer();
+  rafId = requestAnimationFrame(tick);
+}
+
+// ── Digits ───────────────────────────────────────────────────────────────────
+const digitEls = [0,1,2,3].map(i => document.getElementById('d' + i));
+
+function showDigits(vals) {
+  digitEls.forEach((el, i) => { el.textContent = vals != null ? vals[i] : ''; });
+}
+
+// ── Button helpers ───────────────────────────────────────────────────────────
+const btnLeft  = document.getElementById('btn-left');
+const btnRight = document.getElementById('btn-right');
+
+function updateUI() {
+  if (state === 'waiting') {
+    btnLeft.innerHTML  = ICON_PLAY;
+    btnLeft.disabled   = false;
+    btnRight.innerHTML = ICON_STOP;
+    btnRight.disabled  = true;
+  } else if (state === 'running') {
+    btnLeft.innerHTML  = ICON_PAUSE;
+    btnLeft.disabled   = false;
+    btnRight.innerHTML = ICON_STOP;
+    btnRight.disabled  = true;
+  } else {
+    // paused
+    btnLeft.innerHTML  = ICON_PLAY;
+    btnLeft.disabled   = false;
+    btnRight.innerHTML = ICON_STOP;
+    btnRight.disabled  = false;
+  }
+}
+
+// ── Transitions ──────────────────────────────────────────────────────────────
+function toRunning() {
+  if (state === 'waiting') {
+    showDigits([0,1,2,3].map(() => Math.floor(Math.random() * 10)));
+    elapsed = 0;
+  }
+  state      = 'running';
+  startStamp = performance.now();
+  rafId      = requestAnimationFrame(tick);
+  updateUI();
+}
+
+function toPaused() {
+  elapsed += performance.now() - startStamp;
+  state = 'paused';
+  cancelAnimationFrame(rafId);
+  renderTimer();
+  updateUI();
+}
+
+function toWaiting() {
+  if (!confirm('タイマーとキャンバスをリセットしますか？')) return;
+  state   = 'waiting';
+  elapsed = 0;
+  cancelAnimationFrame(rafId);
+  showDigits(null);
+  timerEl.innerHTML = formatTime(0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  updateUI();
+}
+
+btnLeft.addEventListener('click', () => {
+  if (state === 'running') toPaused();
+  else                     toRunning();
+});
+
+btnRight.addEventListener('click', () => {
+  if (state === 'paused') toWaiting();
+});
+
+// ── Tools ────────────────────────────────────────────────────────────────────
+let currentTool = 'pencil';
+
+document.getElementById('tool-pencil').addEventListener('click', () => {
+  currentTool = 'pencil';
+  document.getElementById('tool-pencil').classList.add('active');
+  document.getElementById('tool-eraser').classList.remove('active');
+});
+
+document.getElementById('tool-eraser').addEventListener('click', () => {
+  currentTool = 'eraser';
+  document.getElementById('tool-eraser').classList.add('active');
+  document.getElementById('tool-pencil').classList.remove('active');
+});
+
+// ── Drawing ──────────────────────────────────────────────────────────────────
+let drawing = false;
+
+function getPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+function applyStyle() {
+  ctx.lineCap  = 'round';
+  ctx.lineJoin = 'round';
+  if (currentTool === 'pencil') {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = '#1a1a1a';
+    ctx.lineWidth   = 3;
+  } else {
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.strokeStyle = 'rgba(0,0,0,1)';
+    ctx.lineWidth   = 20;
+  }
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (e.button > 0) return;
+  drawing = true;
+  canvas.setPointerCapture(e.pointerId);
+  const {x, y} = getPos(e);
+  applyStyle();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  // Dot for single tap
+  ctx.lineTo(x + 0.001, y + 0.001);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const {x, y} = getPos(e);
+  applyStyle();
+  ctx.lineTo(x, y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+});
+
+canvas.addEventListener('pointerup',     () => { drawing = false; });
+canvas.addEventListener('pointercancel', () => { drawing = false; });
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+updateUI();
+timerEl.innerHTML = formatTime(0);
+showDigits(null);
+</script>
+</body>
+</html>
