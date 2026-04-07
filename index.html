@@ -354,20 +354,31 @@ btnRight.addEventListener('click', () => {
   if (state === 'paused') toWaiting();
 });
 
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.repeat) return;
+  if (e.code === 'Space') {
+    e.preventDefault();
+    if (state === 'running') toPaused();
+    else                     toRunning();
+  } else if (e.code === 'KeyR') {
+    if (state === 'paused') toWaiting();
+  } else if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+    setTool(currentTool === 'pencil' ? 'eraser' : 'pencil');
+  }
+});
+
 // ── Tools ────────────────────────────────────────────────────────────────────
 let currentTool = 'pencil';
 
-document.getElementById('tool-pencil').addEventListener('click', () => {
-  currentTool = 'pencil';
-  document.getElementById('tool-pencil').classList.add('active');
-  document.getElementById('tool-eraser').classList.remove('active');
-});
+function setTool(tool) {
+  currentTool = tool;
+  document.getElementById('tool-pencil').classList.toggle('active', tool === 'pencil');
+  document.getElementById('tool-eraser').classList.toggle('active', tool === 'eraser');
+}
 
-document.getElementById('tool-eraser').addEventListener('click', () => {
-  currentTool = 'eraser';
-  document.getElementById('tool-eraser').classList.add('active');
-  document.getElementById('tool-pencil').classList.remove('active');
-});
+document.getElementById('tool-pencil').addEventListener('click', () => setTool('pencil'));
+document.getElementById('tool-eraser').addEventListener('click', () => setTool('eraser'));
 
 // ── Drawing ──────────────────────────────────────────────────────────────────
 let drawing = false;
