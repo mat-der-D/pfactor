@@ -21,7 +21,6 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 10px;
   border: 1px solid #c8bfaa;
 }
 
@@ -231,7 +230,7 @@ const ICON_PAUSE = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" heig
 const ICON_STOP  = `<svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`;
 
 // ── Layout ───────────────────────────────────────────────────────────────────
-const appH = Math.floor(window.innerHeight * 0.95 / 16) * 16;
+const appH = window.innerHeight;
 const appW = appH / 16 * 9;
 const app  = document.getElementById('app');
 app.style.width  = appW + 'px';
